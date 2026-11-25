@@ -1,4 +1,3 @@
-
 function Filtros({
   filtro,
   cambiarFiltro,
@@ -29,8 +28,8 @@ function Filtros({
 
         <button
           type="button"
-          onClick={() => cambiarFiltro('series')}
-          aria-pressed={filtro === 'series'}
+          onClick={() => cambiarFiltro('tv')}
+          aria-pressed={filtro === 'tv'}
         >
           Series
         </button>

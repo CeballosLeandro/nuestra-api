@@ -14,9 +14,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Rutas públicas */}
         <Route path="/" element={<App />} />
-        <Route path="/pelicula/:id" element={<DetallePelicula />} />
+        <Route path="/pelicula/:tipo/:id" element={<DetallePelicula />} />
 
         {/* Rutas protegidas */}
         <Route element={<RutaProtegida />}>

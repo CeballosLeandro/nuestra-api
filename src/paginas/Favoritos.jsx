@@ -1,9 +1,10 @@
-
 import { Link } from 'react-router';
 import { useFavoritosContext } from '../contexto/FavoritosContext';
+import { crearUrlImagen } from '../api/tmdb';
 
 function Favoritos() {
-  const { favoritos, quitarFavorito } = useFavoritosContext();
+  const { favoritos, quitarFavorito, cargando, error } =
+    useFavoritosContext();
 
   return (
     <main className="app">
@@ -14,30 +15,35 @@ function Favoritos() {
 
       <Link to="/">← Volver al inicio</Link>
 
-      {favoritos.length === 0 ? (
+      {cargando ? (
+        <p role="status">Cargando favoritos...</p>
+      ) : error ? (
+        <p role="alert">Ocurrió un error al cargar tus favoritos: {error}</p>
+      ) : favoritos.length === 0 ? (
         <p>Todavía no agregaste favoritos.</p>
       ) : (
         <section className="grilla-peliculas">
-          {favoritos.map((pelicula) => (
+          {favoritos.map((contenido) => (
             <article
               className="tarjeta-pelicula"
-              key={pelicula.imdbID}
+              key={`${contenido.tipo}-${contenido.id}`}
             >
               <img
-                src={
-                  pelicula.Poster !== 'N/A'
-                    ? pelicula.Poster
-                    : 'https://placehold.co/300x450?text=Sin+poster'
-                }
-                alt={`Póster de ${pelicula.Title}`}
+                src={crearUrlImagen(contenido.poster)}
+                alt={`Póster de ${contenido.titulo}`}
               />
 
-              <h3>{pelicula.Title}</h3>
-              <p>{pelicula.Year}</p>
+              <h3>{contenido.titulo}</h3>
+              <p>{contenido.anio}</p>
+              <p>
+                {contenido.tipo === 'tv' ? 'Serie' : 'Película'}
+              </p>
 
               <button
                 type="button"
-                onClick={() => quitarFavorito(pelicula.imdbID)}
+                onClick={() =>
+                  quitarFavorito(contenido.id, contenido.tipo)
+                }
               >
                 Quitar de favoritos
               </button>

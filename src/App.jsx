@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { usePeliculas } from './hooks/usePeliculas';
 
@@ -34,19 +33,18 @@ function App() {
   const {
     peliculas,
     totalResultados,
+    totalPaginas,
     cargando,
     error,
     busquedaRealizada,
     buscar,
   } = usePeliculas();
 
-  const POR_PAGINA = 10;
-
   useEffect(() => {
     const termino = searchParams.get('q');
 
     if (termino) {
-      buscar(termino, pagina);
+      buscar(termino, pagina, filtro, anio);
     }
   }, []);
 
@@ -61,56 +59,43 @@ function App() {
     setSearchParams(nuevosParametros, { replace: true });
   }, [busqueda, filtro, anio, pagina, setSearchParams]);
 
-    function manejarBusqueda(evento, termino = busqueda) {
+  function manejarBusqueda(evento, termino = busqueda) {
     evento?.preventDefault();
 
     setBusqueda(termino);
     setPagina(1);
-    buscar(termino, 1);
+    buscar(termino, 1, filtro, anio);
   }
 
   function cambiarPagina(nuevaPagina) {
     setPagina(nuevaPagina);
-    buscar(busqueda, nuevaPagina);
+    buscar(busqueda, nuevaPagina, filtro, anio);
   }
 
   function cambiarFiltro(nuevoFiltro) {
     setFiltro(nuevoFiltro);
     setPagina(1);
+    buscar(busqueda, 1, nuevoFiltro, anio);
   }
 
   function cambiarAnio(nuevoAnio) {
     setAnio(nuevoAnio);
     setPagina(1);
+    buscar(busqueda, 1, filtro, nuevoAnio);
   }
 
-  function abrirDetalle(id) {
-    navegar(`/pelicula/${id}`);
+  function abrirDetalle(tipo, id) {
+    navegar(`/pelicula/${tipo}/${id}`);
   }
 
-  const aniosDisponibles = useMemo(() => {
-    return [...new Set(
-      peliculas
-        .map((pelicula) => pelicula.Year?.match(/\d{4}/)?.[0])
-        .filter(Boolean)
-    )].sort((a, b) => Number(b) - Number(a));
-  }, [peliculas]);
+  const anioActual = new Date().getFullYear();
 
-  const peliculasFiltradas = useMemo(() => {
-    return peliculas.filter((pelicula) => {
-      const coincideTipo =
-        filtro === 'todos' || pelicula.Type === filtro;
+  const aniosDisponibles = Array.from(
+    { length: anioActual - 1899 },
+    (_, indice) => String(anioActual - indice)
+  );
 
-      const anioPelicula = pelicula.Year?.match(/\d{4}/)?.[0];
-
-      const coincideAnio =
-        anio === 'todos' || anioPelicula === anio;
-
-      return coincideTipo && coincideAnio;
-    });
-  }, [peliculas, filtro, anio]);
-
-  const totalPaginas = Math.ceil(totalResultados / POR_PAGINA);
+const peliculasFiltradas = peliculas;
 
   return (
     <main className="app">
@@ -160,9 +145,11 @@ function App() {
               <div className="grilla-peliculas">
                 {peliculasFiltradas.map((pelicula) => (
                   <TarjetaPelicula
-                    key={pelicula.imdbID}
+                    key={`${pelicula.tipo}-${pelicula.id}`}
                     pelicula={pelicula}
-                    alVerDetalle={abrirDetalle}
+                    alVerDetalle={() =>
+                      abrirDetalle(pelicula.tipo, pelicula.id)
+                    }
                   />
                 ))}
               </div>

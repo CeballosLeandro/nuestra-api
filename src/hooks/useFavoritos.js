@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase/cliente';
 import { useAuth } from '../contexto/AuthContext';
@@ -10,7 +9,7 @@ export function useFavoritos() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
-  // Obtener los favoritos del usuario
+  // Obtener los favoritos del usuario autenticado.
   useEffect(() => {
     let activo = true;
 
@@ -20,6 +19,7 @@ export function useFavoritos() {
       if (!usuario) {
         setFavoritos([]);
         setCargando(false);
+        setError('');
         return;
       }
 
@@ -39,15 +39,15 @@ export function useFavoritos() {
         return;
       }
 
-      const peliculas = data.map((favorito) => ({
-        imdbID: favorito.imdb_id,
-        Title: favorito.titulo,
-        Year: favorito.anio,
-        Poster: favorito.poster,
-        Type: favorito.tipo,
+      const contenidos = data.map((favorito) => ({
+        id: Number(favorito.tmdb_id),
+        titulo: favorito.titulo,
+        anio: favorito.anio,
+        poster: favorito.poster,
+        tipo: favorito.tipo,
       }));
 
-      setFavoritos(peliculas);
+      setFavoritos(contenidos);
       setCargando(false);
     }
 
@@ -58,7 +58,7 @@ export function useFavoritos() {
     };
   }, [usuario, cargandoAuth]);
 
-  // Escuchar cambios en tiempo real
+  // Escuchar cambios en tiempo real.
   useEffect(() => {
     if (cargandoAuth || !usuario) return;
 
@@ -76,20 +76,22 @@ export function useFavoritos() {
           if (payload.eventType === 'INSERT') {
             const nuevo = payload.new;
 
-            const pelicula = {
-              imdbID: nuevo.imdb_id,
-              Title: nuevo.titulo,
-              Year: nuevo.anio,
-              Poster: nuevo.poster,
-              Type: nuevo.tipo,
+            const contenido = {
+              id: Number(nuevo.tmdb_id),
+              titulo: nuevo.titulo,
+              anio: nuevo.anio,
+              poster: nuevo.poster,
+              tipo: nuevo.tipo,
             };
 
             setFavoritos((actuales) => {
               const existe = actuales.some(
-                (favorito) => favorito.imdbID === pelicula.imdbID
+                (favorito) =>
+                  favorito.id === contenido.id &&
+                  favorito.tipo === contenido.tipo
               );
 
-              return existe ? actuales : [...actuales, pelicula];
+              return existe ? actuales : [...actuales, contenido];
             });
           }
 
@@ -98,7 +100,11 @@ export function useFavoritos() {
 
             setFavoritos((actuales) =>
               actuales.filter(
-                (favorito) => favorito.imdbID !== eliminado.imdb_id
+                (favorito) =>
+                  !(
+                    favorito.id === Number(eliminado.tmdb_id) &&
+                    favorito.tipo === eliminado.tipo
+                  )
               )
             );
           }
@@ -111,17 +117,20 @@ export function useFavoritos() {
     };
   }, [usuario, cargandoAuth]);
 
-  // Agregar un favorito
-  async function agregarFavorito(pelicula) {
-    if (!usuario) return;
+  // Agregar un favorito.
+  async function agregarFavorito(contenido) {
+    if (!usuario) {
+      setError('Necesitás iniciar sesión para agregar favoritos.');
+      return;
+    }
 
     const nuevoFavorito = {
       user_id: usuario.id,
-      imdb_id: pelicula.imdbID,
-      titulo: pelicula.Title,
-      anio: pelicula.Year,
-      poster: pelicula.Poster,
-      tipo: pelicula.Type,
+      tmdb_id: contenido.id,
+      titulo: contenido.titulo,
+      anio: contenido.anio,
+      poster: contenido.poster,
+      tipo: contenido.tipo,
     };
 
     const { error } = await supabase
@@ -135,23 +144,28 @@ export function useFavoritos() {
       return;
     }
 
+    setError('');
+
     setFavoritos((actuales) => {
       const existe = actuales.some(
-        (favorito) => favorito.imdbID === pelicula.imdbID
+        (favorito) =>
+          favorito.id === contenido.id &&
+          favorito.tipo === contenido.tipo
       );
 
-      return existe ? actuales : [...actuales, pelicula];
+      return existe ? actuales : [...actuales, contenido];
     });
   }
 
-  // Eliminar un favorito
-  async function quitarFavorito(id) {
+  // Eliminar un favorito.
+  async function quitarFavorito(id, tipo) {
     if (!usuario) return;
 
     const { error } = await supabase
       .from('favoritos')
       .delete()
-      .eq('imdb_id', id)
+      .eq('tmdb_id', id)
+      .eq('tipo', tipo)
       .eq('user_id', usuario.id);
 
     if (error) {
@@ -159,15 +173,22 @@ export function useFavoritos() {
       return;
     }
 
+    setError('');
+
     setFavoritos((actuales) =>
-      actuales.filter((favorito) => favorito.imdbID !== id)
+      actuales.filter(
+        (favorito) =>
+          !(favorito.id === Number(id) && favorito.tipo === tipo)
+      )
     );
   }
 
-  // Comprobar si una película es favorita
-  function esFavorito(id) {
+  // Comprobar si un contenido es favorito.
+  function esFavorito(id, tipo) {
     return favoritos.some(
-      (favorito) => favorito.imdbID === id
+      (favorito) =>
+        favorito.id === Number(id) &&
+        favorito.tipo === tipo
     );
   }
 
@@ -180,4 +201,3 @@ export function useFavoritos() {
     esFavorito,
   };
 }
-

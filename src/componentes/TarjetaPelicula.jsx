@@ -1,28 +1,26 @@
+import { crearUrlImagen } from '../api/tmdb';
 
 function TarjetaPelicula({ pelicula, alVerDetalle }) {
   return (
     <article className="tarjeta-pelicula">
       <img
-        src={
-          pelicula.Poster !== 'N/A'
-            ? pelicula.Poster
-            : 'https://placehold.co/300x450?text=Sin+poster'
-        }
-        alt={`Póster de ${pelicula.Title}`}
+        src={crearUrlImagen(pelicula.poster)}
+        alt={`Póster de ${pelicula.titulo}`}
+        loading="lazy"
       />
 
-      <h3>{pelicula.Title}</h3>
+      <h3>{pelicula.titulo}</h3>
 
-      <p>{pelicula.Year}</p>
+      <p>{pelicula.anio}</p>
 
       <p>
-        {pelicula.Type === 'series' ? 'Serie' : 'Película'}
+        {pelicula.tipo === 'tv' ? 'Serie' : 'Película'}
       </p>
 
       <button
         type="button"
-        onClick={() => alVerDetalle(pelicula.imdbID)}
-        aria-label={`Ver detalles de ${pelicula.Title}`}
+        onClick={() => alVerDetalle(pelicula.tipo, pelicula.id)}
+        aria-label={`Ver detalles de ${pelicula.titulo}`}
       >
         Ver detalles
       </button>

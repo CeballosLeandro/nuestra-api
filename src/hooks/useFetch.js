@@ -1,46 +1,46 @@
-
 import { useEffect, useState } from 'react';
 
-function useFetch(url) {
+function useFetch(obtenerDatos) {
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!url) return;
+    if (!obtenerDatos) {
+      setCargando(false);
+      return;
+    }
 
-    const controlador = new AbortController();
+    let activo = true;
 
-    async function obtenerDatos() {
+    async function ejecutarConsulta() {
       setCargando(true);
       setError('');
+      setDatos(null);
 
       try {
-        const respuesta = await fetch(url, {
-          signal: controlador.signal,
-        });
+        const resultado = await obtenerDatos();
 
-        if (!respuesta.ok) {
-          throw new Error('Error al obtener los datos.');
+        if (activo) {
+          setDatos(resultado);
         }
-
-        const resultado = await respuesta.json();
-        setDatos(resultado);
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          setError(err.message);
+        if (activo) {
+          setError(err.message || 'Error al obtener los datos.');
         }
       } finally {
-        if (!controlador.signal.aborted) {
+        if (activo) {
           setCargando(false);
         }
       }
     }
 
-    obtenerDatos();
+    ejecutarConsulta();
 
-    return () => controlador.abort();
-  }, [url]);
+    return () => {
+      activo = false;
+    };
+  }, [obtenerDatos]);
 
   return { datos, cargando, error };
 }
